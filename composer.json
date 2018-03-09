@@ -1,0 +1,26 @@
+{
+    "name": "in2code/t3am_server",
+    "description": "T3AM Server - TYPO3 Authentication Manager Server",
+    "type": "typo3-cms-extension",
+    "license": "GPL-2.0",
+    "authors": [
+        {
+            "name": "Oliver Eglseder",
+            "email": "php@vxvr.de"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": "^5.5 || ^7.0",
+        "ext-openssl": "*",
+        "typo3/cms-core": "^7.6 || ^8.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "In2code\\T3AM\\Server\\": "Classes"
+        }
+    },
+    "conflict": {
+        "in2code/t3am": "*"
+    }
+}
