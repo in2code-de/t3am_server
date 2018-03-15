@@ -85,8 +85,8 @@ class SecurityService
         openssl_pkey_export($res, $privateKey);
         $pubKey = openssl_pkey_get_details($res);
 
-        $this->database->exec_INSERTquery('tx_t3amserver_keys', ['crdate' => time(), 'key_value' => $privateKey]);
-        return ['pubKey' => $pubKey['key'], 'encryptionId' => $this->database->sql_insert_id()];
+        $this->database->exec_INSERTquery('tx_t3amserver_keys', ['key_value' => base64_encode($privateKey)]);
+        return ['pubKey' => base64_encode($pubKey['key']), 'encryptionId' => $this->database->sql_insert_id()];
     }
 
     public function authUser($user, $password, $encryptionId)
@@ -99,13 +99,15 @@ class SecurityService
         }
         $this->database->exec_DELETEquery('tx_t3amserver_keys', $where);
 
-        if (!@openssl_private_decrypt(base64_decode($password), $plainPassword, $keyRow['key_value'])) {
+        $privateKey = base64_decode($keyRow['key_value']);
+        $password = base64_decode(urldecode($password));
+        if (!@openssl_private_decrypt($password, $decryptedPassword, $privateKey)) {
             return false;
         }
 
         $userRow = GeneralUtility::makeInstance(UserRepository::class)->getUser($user);
 
         $saltingInstance = SaltFactory::getSaltingInstance($userRow['password']);
-        return $saltingInstance->checkPassword($plainPassword, $userRow['password']);
+        return $saltingInstance->checkPassword($decryptedPassword, $userRow['password']);
     }
 }
