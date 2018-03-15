@@ -1,9 +1,8 @@
 CREATE TABLE tx_t3amserver_keys (
   uid int(11) NOT NULL auto_increment,
-  key_value varchar(40) DEFAULT '' NOT NULL,
+  key_value text,
 
-  PRIMARY KEY (uid),
-  KEY key_value (key_value)
+  PRIMARY KEY (uid)
 );
 
 CREATE TABLE tx_t3amserver_client (
