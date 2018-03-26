@@ -37,6 +37,7 @@ class Server
         'user/state' => [UserRepository::class, 'getUserState'],
         'user/auth' => [SecurityService::class, 'authUser'],
         'user/get' => [UserRepository::class, 'getUser'],
+        'user/image' => [UserRepository::class, 'getUserImage'],
         'encryption/getKey' => [SecurityService::class, 'createEncryptionKey'],
     ];
 
