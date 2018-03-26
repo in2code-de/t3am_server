@@ -12,6 +12,27 @@ class UserRepository
     protected $connection = null;
 
     /**
+     * @var array
+     */
+    protected $fields = [
+        'tstamp',
+        'username',
+        'description',
+        'avatar',
+        'password',
+        'admin',
+        'disable',
+        'starttime',
+        'endtime',
+        'lang',
+        'email',
+        'crdate',
+        'realName',
+        'disableIPlock',
+        'deleted',
+    ];
+
+    /**
      * BackendUserRepository constructor.
      *
      * @SuppressWarnings(PHPMD.Superglobals)
@@ -49,6 +70,6 @@ class UserRepository
     public function getUser($user)
     {
         $where = 'username = ' . $this->connection->fullQuoteStr($user, 'be_users');
-        return $this->connection->exec_SELECTgetSingleRow('*', 'be_users', $where);
+        return $this->connection->exec_SELECTgetSingleRow(implode(',', $this->fields), 'be_users', $where);
     }
 }
