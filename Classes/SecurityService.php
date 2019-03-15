@@ -33,16 +33,6 @@ class SecurityService
     protected $connectionPool;
 
     /**
-     * @var QueryBuilder
-     */
-    protected $keysQueryBuilder;
-
-    /**
-     * @var QueryBuilder
-     */
-    protected $clientQueryBuilder;
-
-    /**
      * SecurityService constructor.
      *
      * @SuppressWarnings(PHPMD.Superglobals)
@@ -50,8 +40,6 @@ class SecurityService
     public function __construct()
     {
         $this->connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
-        $this->keysQueryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_t3amserver_keys');
-        $this->clientQueryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_t3amserver_client');
     }
 
     /**
@@ -81,12 +69,12 @@ class SecurityService
             return false;
         }
 
-        return (bool)$this->clientQueryBuilder
+        return (bool)$this->getClientQueryBuilder()
             ->count('*')
             ->from('tx_t3amserver_client')
-            ->where($this->clientQueryBuilder
+            ->where($this->getClientQueryBuilder()
                 ->expr()
-                ->eq('token', $this->clientQueryBuilder->createNamedParameter($token)))
+                ->eq('token', $this->getClientQueryBuilder()->createNamedParameter($token)))
             ->execute()
             ->fetchColumn();
     }
@@ -106,7 +94,7 @@ class SecurityService
         openssl_pkey_export($res, $privateKey);
         $pubKey = openssl_pkey_get_details($res);
 
-        $this->keysQueryBuilder
+        $this->getKeysQueryBuilder()
             ->insert('tx_t3amserver_keys')
             ->values(['key_value' => base64_encode($privateKey)])
             ->execute();
@@ -121,11 +109,11 @@ class SecurityService
 
     public function authUser($user, $password, $encryptionId)
     {
-        $where = $this->keysQueryBuilder
+        $where = $this->getKeysQueryBuilder()
             ->expr()
-            ->eq('uid', $this->keysQueryBuilder->createNamedParameter((int)$encryptionId));
+            ->eq('uid', $this->getKeysQueryBuilder()->createNamedParameter((int)$encryptionId));
 
-        $keyRow = $this->keysQueryBuilder
+        $keyRow = $this->getKeysQueryBuilder()
             ->select('*')
             ->from('tx_t3amserver_keys')
             ->where($where)
@@ -136,7 +124,7 @@ class SecurityService
             return false;
         }
 
-        $this->keysQueryBuilder
+        $this->getKeysQueryBuilder()
             ->delete('tx_t3amserver_keys')
             ->where($where)
             ->execute();
@@ -153,5 +141,20 @@ class SecurityService
         return GeneralUtility::makeInstance(PasswordHashFactory::class)
             ->get($userRow['password'], 'BE')
             ->checkPassword($decryptedPassword, $userRow['password']);
+    }
+
+    /**
+     * @return QueryBuilder
+     */
+    private function getKeysQueryBuilder()
+    {
+        return $this->connectionPool->getQueryBuilderForTable('tx_t3amserver_keys');
+    }
+
+    /**
+     * @return QueryBuilder
+     */
+    private function getClientQueryBuilder() {
+        return $this->connectionPool->getQueryBuilderForTable('tx_t3amserver_client');
     }
 }

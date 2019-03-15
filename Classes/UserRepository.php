@@ -1,5 +1,4 @@
 <?php
-
 namespace In2code\T3AM\Server;
 
 /*
@@ -35,11 +34,6 @@ class UserRepository
     protected $connectionPool;
 
     /**
-     * @var QueryBuilder
-     */
-    protected $beUserQueryBuilder;
-
-    /**
      * @var array
      */
     protected $fields = [
@@ -68,7 +62,6 @@ class UserRepository
     public function __construct()
     {
         $this->connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
-        $this->beUserQueryBuilder = $this->connectionPool->getQueryBuilderForTable('be_users');
     }
 
     /**
@@ -78,11 +71,11 @@ class UserRepository
      */
     public function getUserState($user)
     {
-        $where = $this->beUserQueryBuilder
+        $where = $this->getBeUserQueryBuilder()
             ->expr()
             ->eq('username', $this->getWhereForUserName($user));
 
-        $count = $this->beUserQueryBuilder
+        $count = $this->getBeUserQueryBuilder()
             ->count('*')
             ->from('be_users')
             ->where($where)
@@ -92,12 +85,12 @@ class UserRepository
         /** @var DeletedRestriction $restriction */
         $restriction = GeneralUtility::makeInstance(DeletedRestriction::class);
 
-        $this->beUserQueryBuilder
+        $this->getBeUserQueryBuilder()
             ->getRestrictions()
             ->removeAll()
             ->add($restriction);
 
-        $countActive = $this->beUserQueryBuilder
+        $countActive = $this->getBeUserQueryBuilder()
             ->count('*')
             ->from('be_users')
             ->where($where)
@@ -123,11 +116,11 @@ class UserRepository
     public function getUser($user)
     {
         foreach ($this->fields as $field) {
-            $this->beUserQueryBuilder
+            $this->getBeUserQueryBuilder()
                 ->addSelect($field);
         }
 
-        return $this->beUserQueryBuilder
+        return $this->getBeUserQueryBuilder()
             ->from('be_users')
             ->where($this->getWhereForUserName($user))
             ->execute()
@@ -142,13 +135,13 @@ class UserRepository
      */
     protected function getWhereForUserName($userName)
     {
-        $this->beUserQueryBuilder
+        $this->getBeUserQueryBuilder()
             ->getRestrictions()
             ->removeAll();
 
-        return $this->beUserQueryBuilder
+        return $this->getBeUserQueryBuilder()
             ->expr()
-            ->eq('username', $this->beUserQueryBuilder->createNamedParameter($userName));
+            ->eq('username', $this->getBeUserQueryBuilder()->createNamedParameter($userName));
     }
 
     /**
@@ -208,5 +201,12 @@ class UserRepository
         }
 
         return null;
+    }
+
+    /**
+     * @return QueryBuilder
+     */
+    private function getBeUserQueryBuilder() {
+        return $this->connectionPool->getQueryBuilderForTable('be_users');
     }
 }
