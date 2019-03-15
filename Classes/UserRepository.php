@@ -32,7 +32,7 @@ class UserRepository
     /**
      * @var ConnectionPool
      */
-    protected $connection;
+    protected $connectionPool;
 
     /**
      * @var QueryBuilder
@@ -67,8 +67,8 @@ class UserRepository
      */
     public function __construct()
     {
-        $this->connection = GeneralUtility::makeInstance(ConnectionPool::class);
-        $this->beUserQueryBuilder = $this->connection->getQueryBuilderForTable('be_users');
+        $this->connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $this->beUserQueryBuilder = $this->connectionPool->getQueryBuilderForTable('be_users');
     }
 
     /**
@@ -159,7 +159,7 @@ class UserRepository
     public function getUserImage($user)
     {
         /** @var QueryBuilder $queryBuilder */
-        $queryBuilder = $this->connection->getQueryBuilderForTable('sys_file');
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_file');
 
         $file = $queryBuilder
             ->select('sys_file.*')
