@@ -115,12 +115,8 @@ class UserRepository
      */
     public function getUser($user)
     {
-        foreach ($this->fields as $field) {
-            $this->getBeUserQueryBuilder()
-                ->addSelect($field);
-        }
-
         return $this->getBeUserQueryBuilder()
+            ->select(...$this->fields)
             ->from('be_users')
             ->where($this->getWhereForUserName($user))
             ->execute()
