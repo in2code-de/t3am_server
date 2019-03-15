@@ -30,7 +30,7 @@ class SecurityService
     /**
      * @var ConnectionPool
      */
-    protected $connection;
+    protected $connectionPool;
 
     /**
      * @var QueryBuilder
@@ -49,9 +49,9 @@ class SecurityService
      */
     public function __construct()
     {
-        $this->connection = GeneralUtility::makeInstance(ConnectionPool::class);
-        $this->keysQueryBuilder = $this->connection->getQueryBuilderForTable('tx_t3amserver_keys');
-        $this->clientQueryBuilder = $this->connection->getQueryBuilderForTable('tx_t3amserver_client');
+        $this->connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $this->keysQueryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_t3amserver_keys');
+        $this->clientQueryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_t3amserver_client');
     }
 
     /**
@@ -113,7 +113,7 @@ class SecurityService
 
         return [
             'pubKey' => base64_encode($pubKey['key']),
-            'encryptionId' => $this->connection
+            'encryptionId' => $this->connectionPool
                 ->getConnectionForTable('tx_t3amserver_keys')
                 ->lastInsertId()
         ];
