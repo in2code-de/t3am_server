@@ -63,7 +63,7 @@ class SecurityService
             foreach (array_keys($dataHandler->datamap['tx_t3amserver_client']) as $uid) {
                 if (is_string($uid) && 0 === strpos($uid, 'NEW')) {
                     $dataHandler->datamap['tx_t3amserver_client'][$uid]['token'] = GeneralUtility::hmac(
-                        (new Random)->generateRandomBytes(256),
+                        GeneralUtility::makeInstance(Random::class)->generateRandomBytes(256),
                         'tx_t3amserver_client'
                     );
                 }
