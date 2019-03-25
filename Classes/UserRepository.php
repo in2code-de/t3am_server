@@ -71,11 +71,13 @@ class UserRepository
      */
     public function getUserState($user)
     {
-        $where = $this->getBeUserQueryBuilder()
+        $queryBuilder = $this->getBeUserQueryBuilder();
+
+        $where = $queryBuilder
             ->expr()
             ->eq('username', $this->getWhereForUserName($user));
 
-        $count = $this->getBeUserQueryBuilder()
+        $count = $queryBuilder
             ->count('*')
             ->from('be_users')
             ->where($where)
@@ -85,12 +87,14 @@ class UserRepository
         /** @var DeletedRestriction $restriction */
         $restriction = GeneralUtility::makeInstance(DeletedRestriction::class);
 
-        $this->getBeUserQueryBuilder()
+        $queryBuilder = $this->getBeUserQueryBuilder();
+
+        $queryBuilder
             ->getRestrictions()
             ->removeAll()
             ->add($restriction);
 
-        $countActive = $this->getBeUserQueryBuilder()
+        $countActive = $queryBuilder
             ->count('*')
             ->from('be_users')
             ->where($where)
