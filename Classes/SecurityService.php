@@ -69,12 +69,14 @@ class SecurityService
             return false;
         }
 
-        return (bool)$this->getClientQueryBuilder()
+        $queryBuilder = $this->getClientQueryBuilder();
+
+        return (bool)$queryBuilder
             ->count('*')
             ->from('tx_t3amserver_client')
-            ->where($this->getClientQueryBuilder()
+            ->where($queryBuilder
                 ->expr()
-                ->eq('token', $this->getClientQueryBuilder()->createNamedParameter($token)))
+                ->eq('token', $queryBuilder->createNamedParameter($token)))
             ->execute()
             ->fetchColumn();
     }
