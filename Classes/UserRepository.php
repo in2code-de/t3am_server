@@ -89,6 +89,10 @@ class UserRepository
 
         $queryBuilder = $this->getBeUserQueryBuilder();
 
+        $where = $queryBuilder
+            ->expr()
+            ->eq('username', $this->getWhereForUserName($user));
+
         $queryBuilder
             ->getRestrictions()
             ->removeAll()
