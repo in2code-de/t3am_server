@@ -128,7 +128,13 @@ class SecurityService
             return false;
         }
 
-        $this->getKeysQueryBuilder()
+        $queryBuilder = $this->getKeysQueryBuilder();
+
+        $where = $queryBuilder
+            ->expr()
+            ->eq('uid', $queryBuilder->createNamedParameter((int)$encryptionId));
+
+        $queryBuilder
             ->delete('tx_t3amserver_keys')
             ->where($where)
             ->execute();
