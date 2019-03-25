@@ -69,7 +69,7 @@ class SecurityService
             return false;
         }
 
-        $queryBuilder = $this->getClientQueryBuilder();
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_t3amserver_client');
 
         return (bool)$queryBuilder
             ->count('*')
@@ -111,11 +111,13 @@ class SecurityService
 
     public function authUser($user, $password, $encryptionId)
     {
-        $where = $this->getKeysQueryBuilder()
-            ->expr()
-            ->eq('uid', $this->getKeysQueryBuilder()->createNamedParameter((int)$encryptionId));
+        $queryBuilder = $this->getKeysQueryBuilder();
 
-        $keyRow = $this->getKeysQueryBuilder()
+        $where = $queryBuilder
+            ->expr()
+            ->eq('uid', $queryBuilder->createNamedParameter((int)$encryptionId));
+
+        $keyRow = $queryBuilder
             ->select('*')
             ->from('tx_t3amserver_keys')
             ->where($where)
@@ -151,12 +153,5 @@ class SecurityService
     private function getKeysQueryBuilder()
     {
         return $this->connectionPool->getQueryBuilderForTable('tx_t3amserver_keys');
-    }
-
-    /**
-     * @return QueryBuilder
-     */
-    private function getClientQueryBuilder() {
-        return $this->connectionPool->getQueryBuilderForTable('tx_t3amserver_client');
     }
 }
