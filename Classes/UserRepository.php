@@ -132,6 +132,10 @@ class UserRepository
      */
     protected function getWhereForUserName($queryBuilder, $userName)
     {
+        $queryBuilder
+            ->getRestrictions()
+            ->removeAll();
+
         return $queryBuilder
             ->expr()
             ->eq('username', $queryBuilder->createNamedParameter($userName));
