@@ -131,13 +131,15 @@ class UserRepository
      */
     protected function getWhereForUserName($userName)
     {
-        $this->getBeUserQueryBuilder()
+        $queryBuilder = $this->getBeUserQueryBuilder();
+
+        $queryBuilder
             ->getRestrictions()
             ->removeAll();
 
-        return $this->getBeUserQueryBuilder()
+        return $queryBuilder
             ->expr()
-            ->eq('username', $this->getBeUserQueryBuilder()->createNamedParameter($userName));
+            ->eq('username', $queryBuilder->createNamedParameter($userName));
     }
 
     /**
