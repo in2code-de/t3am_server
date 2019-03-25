@@ -134,18 +134,12 @@ class UserRepository
     }
 
     /**
-     * created a querybuilder where statement
-     *
      * @param $queryBuilder QueryBuilder
      * @param $userName
      * @return String
      */
     protected function getWhereForUserName($queryBuilder, $userName)
     {
-        $queryBuilder
-            ->getRestrictions()
-            ->removeAll();
-
         return $queryBuilder
             ->expr()
             ->eq('username', $queryBuilder->createNamedParameter($userName));
