@@ -73,14 +73,10 @@ class UserRepository
     {
         $queryBuilder = $this->getBeUserQueryBuilder();
 
-        $where = $queryBuilder
-            ->expr()
-            ->eq('username', $this->getWhereForUserName($queryBuilder, $user));
-
         $count = $queryBuilder
             ->count('*')
             ->from('be_users')
-            ->where($where)
+            ->where($this->getWhereForUserName($queryBuilder, $user))
             ->execute()
             ->fetchColumn();
 
@@ -88,10 +84,6 @@ class UserRepository
         $restriction = GeneralUtility::makeInstance(DeletedRestriction::class);
 
         $queryBuilder = $this->getBeUserQueryBuilder();
-
-        $where = $queryBuilder
-            ->expr()
-            ->eq('username', $this->getWhereForUserName($queryBuilder, $user));
 
         $queryBuilder
             ->getRestrictions()
@@ -101,7 +93,7 @@ class UserRepository
         $countActive = $queryBuilder
             ->count('*')
             ->from('be_users')
-            ->where($where)
+            ->where($this->getWhereForUserName($queryBuilder, $user))
             ->execute()
             ->fetchColumn();
 
