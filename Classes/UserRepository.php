@@ -75,7 +75,7 @@ class UserRepository
 
         $where = $queryBuilder
             ->expr()
-            ->eq('username', $this->getWhereForUserName($user));
+            ->eq('username', $this->getWhereForUserName($queryBuilder, $user));
 
         $count = $queryBuilder
             ->count('*')
@@ -91,7 +91,7 @@ class UserRepository
 
         $where = $queryBuilder
             ->expr()
-            ->eq('username', $this->getWhereForUserName($user));
+            ->eq('username', $this->getWhereForUserName($queryBuilder, $user));
 
         $queryBuilder
             ->getRestrictions()
@@ -123,10 +123,12 @@ class UserRepository
      */
     public function getUser($user)
     {
-        return $this->getBeUserQueryBuilder()
+        $queryBuilder = $this->getBeUserQueryBuilder();
+
+        return $queryBuilder
             ->select(...$this->fields)
             ->from('be_users')
-            ->where($this->getWhereForUserName($user))
+            ->where($this->getWhereForUserName($queryBuilder, $user))
             ->execute()
             ->fetch();
     }
@@ -134,13 +136,12 @@ class UserRepository
     /**
      * created a querybuilder where statement
      *
+     * @param $queryBuilder QueryBuilder
      * @param $userName
      * @return String
      */
-    protected function getWhereForUserName($userName)
+    protected function getWhereForUserName($queryBuilder, $userName)
     {
-        $queryBuilder = $this->getBeUserQueryBuilder();
-
         $queryBuilder
             ->getRestrictions()
             ->removeAll();
