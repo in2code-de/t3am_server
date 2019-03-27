@@ -61,6 +61,7 @@ class SecurityService
 
     /**
      * @param string $token
+     *
      * @return bool
      */
     public function isValid($token)
@@ -74,9 +75,11 @@ class SecurityService
         return (bool)$queryBuilder
             ->count('*')
             ->from('tx_t3amserver_client')
-            ->where($queryBuilder
-                ->expr()
-                ->eq('token', $queryBuilder->createNamedParameter($token)))
+            ->where(
+                $queryBuilder
+                    ->expr()
+                    ->eq('token', $queryBuilder->createNamedParameter($token))
+            )
             ->execute()
             ->fetchColumn();
     }
@@ -86,26 +89,26 @@ class SecurityService
      */
     public function createEncryptionKey()
     {
-        $config = array(
+        $config = [
             'digest_alg' => 'sha512',
             'private_key_bits' => 1024,
             'private_key_type' => OPENSSL_KEYTYPE_RSA,
-        );
+        ];
 
         $res = openssl_pkey_new($config);
         openssl_pkey_export($res, $privateKey);
         $pubKey = openssl_pkey_get_details($res);
 
         $this->getKeysQueryBuilder()
-            ->insert('tx_t3amserver_keys')
-            ->values(['key_value' => base64_encode($privateKey)])
-            ->execute();
+             ->insert('tx_t3amserver_keys')
+             ->values(['key_value' => base64_encode($privateKey)])
+             ->execute();
 
         return [
             'pubKey' => base64_encode($pubKey['key']),
             'encryptionId' => $this->connectionPool
                 ->getConnectionForTable('tx_t3amserver_keys')
-                ->lastInsertId()
+                ->lastInsertId(),
         ];
     }
 
@@ -149,8 +152,8 @@ class SecurityService
         $userRow = GeneralUtility::makeInstance(UserRepository::class)->getUser($user);
 
         return GeneralUtility::makeInstance(PasswordHashFactory::class)
-            ->get($userRow['password'], 'BE')
-            ->checkPassword($decryptedPassword, $userRow['password']);
+                             ->get($userRow['password'], 'BE')
+                             ->checkPassword($decryptedPassword, $userRow['password']);
     }
 
     /**

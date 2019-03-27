@@ -128,6 +128,7 @@ class UserRepository
     /**
      * @param $queryBuilder QueryBuilder
      * @param $userName
+     *
      * @return String
      */
     protected function getWhereForUserName($queryBuilder, $userName)
@@ -160,26 +161,31 @@ class UserRepository
                 'sys_file_reference',
                 $queryBuilder
                     ->expr()
-                    ->eq('sys_file_reference.uid_local', $queryBuilder->quoteIdentifier('sys_file.uid')))
+                    ->eq('sys_file_reference.uid_local', $queryBuilder->quoteIdentifier('sys_file.uid'))
+            )
             ->rightJoin(
                 'sys_file',
                 'be_users',
                 'be_users',
                 $queryBuilder
                     ->expr()
-                    ->eq('be_users.uid', $queryBuilder->quoteIdentifier('sys_file_reference.uid_foreign')))
+                    ->eq('be_users.uid', $queryBuilder->quoteIdentifier('sys_file_reference.uid_foreign'))
+            )
             ->where(
                 $queryBuilder
                     ->expr()
-                    ->eq('be_users.username', $queryBuilder->createNamedParameter($user)))
+                    ->eq('be_users.username', $queryBuilder->createNamedParameter($user))
+            )
             ->andWhere(
                 $queryBuilder
                     ->expr()
-                    ->eq('sys_file_reference.tablenames', $queryBuilder->createNamedParameter('be_users')))
+                    ->eq('sys_file_reference.tablenames', $queryBuilder->createNamedParameter('be_users'))
+            )
             ->andWhere(
                 $queryBuilder
                     ->expr()
-                    ->eq('sys_file_reference.fieldname', $queryBuilder->createNamedParameter('avatar')))
+                    ->eq('sys_file_reference.fieldname', $queryBuilder->createNamedParameter('avatar'))
+            )
             ->execute()
             ->fetch();
 
@@ -203,7 +209,8 @@ class UserRepository
     /**
      * @return QueryBuilder
      */
-    private function getBeUserQueryBuilder() {
+    private function getBeUserQueryBuilder()
+    {
         return $this->connectionPool->getQueryBuilderForTable('be_users');
     }
 }

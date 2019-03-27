@@ -15,6 +15,7 @@ namespace In2code\T3AM\Server;
  * GNU General Public License for more details.
  */
 
+use Exception;
 use ReflectionException;
 use ReflectionMethod;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -85,7 +86,7 @@ class Server
         try {
             $arguments = $this->mapParametersToArguments($class, $action);
             $result = call_user_func_array([GeneralUtility::makeInstance($class), $action], $arguments);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             throw new ServerException('Exception: ' . $exception->getMessage(), 1496395387, $exception);
         }
 
