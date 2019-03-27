@@ -22,5 +22,10 @@
     },
     "conflict": {
         "in2code/t3am": "*"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.0.x-dev"
+        }
     }
 }

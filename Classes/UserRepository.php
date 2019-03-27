@@ -71,35 +71,32 @@ class UserRepository
      */
     public function getUserState($user)
     {
-        $queryBuilder = $this->getBeUserQueryBuilder();
-
-        $count = $queryBuilder
-            ->count('*')
-            ->from('be_users')
-            ->where($this->getWhereForUserName($queryBuilder, $user))
-            ->execute()
-            ->fetchColumn();
-
-        /** @var DeletedRestriction $restriction */
-        $restriction = GeneralUtility::makeInstance(DeletedRestriction::class);
-
-        $queryBuilder = $this->getBeUserQueryBuilder();
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('be_users');
 
         $queryBuilder
             ->getRestrictions()
             ->removeAll()
-            ->add($restriction);
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
 
         $countActive = $queryBuilder
             ->count('*')
             ->from('be_users')
-            ->where($this->getWhereForUserName($queryBuilder, $user))
+            ->where($queryBuilder->expr()->eq('username', $queryBuilder->createNamedParameter($user)))
             ->execute()
             ->fetchColumn();
 
         if ($countActive) {
             return 'okay';
         }
+
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('be_users');
+
+        $count = $queryBuilder
+            ->count('*')
+            ->from('be_users')
+            ->where($queryBuilder->expr()->eq('username', $queryBuilder->createNamedParameter($user)))
+            ->execute()
+            ->fetchColumn();
 
         if ($count) {
             return 'deleted';
@@ -115,31 +112,14 @@ class UserRepository
      */
     public function getUser($user)
     {
-        $queryBuilder = $this->getBeUserQueryBuilder();
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('be_users');
 
         return $queryBuilder
             ->select(...$this->fields)
             ->from('be_users')
-            ->where($this->getWhereForUserName($queryBuilder, $user))
+            ->where($queryBuilder->expr()->eq('username', $queryBuilder->createNamedParameter($user)))
             ->execute()
             ->fetch();
-    }
-
-    /**
-     * @param $queryBuilder QueryBuilder
-     * @param $userName
-     *
-     * @return String
-     */
-    protected function getWhereForUserName($queryBuilder, $userName)
-    {
-        $queryBuilder
-            ->getRestrictions()
-            ->removeAll();
-
-        return $queryBuilder
-            ->expr()
-            ->eq('username', $queryBuilder->createNamedParameter($userName));
     }
 
     /**
@@ -152,40 +132,29 @@ class UserRepository
         /** @var QueryBuilder $queryBuilder */
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_file');
 
+        $onFileToReference = $queryBuilder
+            ->expr()
+            ->eq('sys_file_reference.uid_local', $queryBuilder->quoteIdentifier('sys_file.uid'));
+
+        $onFileReferenceToBeUser = $queryBuilder
+            ->expr()
+            ->eq('be_users.uid', $queryBuilder->quoteIdentifier('sys_file_reference.uid_foreign'));
+
+        $usernameConstraint = $queryBuilder
+            ->expr()
+            ->eq('be_users.username', $queryBuilder->createNamedParameter($user));
+
+        $tableNamesConstraint = $queryBuilder
+            ->expr()
+            ->eq('sys_file_reference.tablenames', $queryBuilder->createNamedParameter('be_users'));
+
         $file = $queryBuilder
             ->select('sys_file.*')
             ->from('sys_file')
-            ->rightJoin(
-                'sys_file',
-                'sys_file_reference',
-                'sys_file_reference',
-                $queryBuilder
-                    ->expr()
-                    ->eq('sys_file_reference.uid_local', $queryBuilder->quoteIdentifier('sys_file.uid'))
-            )
-            ->rightJoin(
-                'sys_file',
-                'be_users',
-                'be_users',
-                $queryBuilder
-                    ->expr()
-                    ->eq('be_users.uid', $queryBuilder->quoteIdentifier('sys_file_reference.uid_foreign'))
-            )
-            ->where(
-                $queryBuilder
-                    ->expr()
-                    ->eq('be_users.username', $queryBuilder->createNamedParameter($user))
-            )
-            ->andWhere(
-                $queryBuilder
-                    ->expr()
-                    ->eq('sys_file_reference.tablenames', $queryBuilder->createNamedParameter('be_users'))
-            )
-            ->andWhere(
-                $queryBuilder
-                    ->expr()
-                    ->eq('sys_file_reference.fieldname', $queryBuilder->createNamedParameter('avatar'))
-            )
+            ->rightJoin('sys_file', 'sys_file_reference', 'sys_file_reference', $onFileToReference)
+            ->rightJoin('sys_file', 'be_users', 'be_users', $onFileReferenceToBeUser)
+            ->where($usernameConstraint)
+            ->andWhere($tableNamesConstraint)
             ->execute()
             ->fetch();
 
@@ -204,13 +173,5 @@ class UserRepository
         }
 
         return null;
-    }
-
-    /**
-     * @return QueryBuilder
-     */
-    private function getBeUserQueryBuilder()
-    {
-        return $this->connectionPool->getQueryBuilderForTable('be_users');
     }
 }
