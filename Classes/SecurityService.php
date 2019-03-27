@@ -15,10 +15,12 @@ namespace In2code\T3AM\Server;
  * GNU General Public License for more details.
  */
 
-use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashFactory;
+use TYPO3\CMS\Core\Crypto\Random;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
 
 /**
  * Class SecurityService
@@ -26,9 +28,9 @@ use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
 class SecurityService
 {
     /**
-     * @var DatabaseConnection
+     * @var ConnectionPool
      */
-    protected $database;
+    protected $connectionPool;
 
     /**
      * SecurityService constructor.
@@ -37,7 +39,7 @@ class SecurityService
      */
     public function __construct()
     {
-        $this->database = $GLOBALS['TYPO3_DB'];
+        $this->connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
     }
 
     /**
@@ -49,7 +51,7 @@ class SecurityService
             foreach (array_keys($dataHandler->datamap['tx_t3amserver_client']) as $uid) {
                 if (is_string($uid) && 0 === strpos($uid, 'NEW')) {
                     $dataHandler->datamap['tx_t3amserver_client'][$uid]['token'] = GeneralUtility::hmac(
-                        GeneralUtility::generateRandomBytes(256),
+                        GeneralUtility::makeInstance(Random::class)->generateRandomBytes(256),
                         'tx_t3amserver_client'
                     );
                 }
@@ -66,8 +68,17 @@ class SecurityService
         if (!is_string($token)) {
             return false;
         }
-        $where = 'token = ' . $this->database->fullQuoteStr($token, 'tx_t3amserver_client');
-        return (bool)$this->database->exec_SELECTcountRows('*', 'tx_t3amserver_client', $where);
+
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_t3amserver_client');
+
+        return (bool)$queryBuilder
+            ->count('*')
+            ->from('tx_t3amserver_client')
+            ->where($queryBuilder
+                ->expr()
+                ->eq('token', $queryBuilder->createNamedParameter($token)))
+            ->execute()
+            ->fetchColumn();
     }
 
     /**
@@ -85,29 +96,68 @@ class SecurityService
         openssl_pkey_export($res, $privateKey);
         $pubKey = openssl_pkey_get_details($res);
 
-        $this->database->exec_INSERTquery('tx_t3amserver_keys', ['key_value' => base64_encode($privateKey)]);
-        return ['pubKey' => base64_encode($pubKey['key']), 'encryptionId' => $this->database->sql_insert_id()];
+        $this->getKeysQueryBuilder()
+            ->insert('tx_t3amserver_keys')
+            ->values(['key_value' => base64_encode($privateKey)])
+            ->execute();
+
+        return [
+            'pubKey' => base64_encode($pubKey['key']),
+            'encryptionId' => $this->connectionPool
+                ->getConnectionForTable('tx_t3amserver_keys')
+                ->lastInsertId()
+        ];
     }
 
     public function authUser($user, $password, $encryptionId)
     {
-        $where = 'uid = ' . (int)$encryptionId;
+        $queryBuilder = $this->getKeysQueryBuilder();
 
-        $keyRow = $this->database->exec_SELECTgetSingleRow('*', 'tx_t3amserver_keys', $where);
-        if (!is_array($keyRow)) {
+        $where = $queryBuilder
+            ->expr()
+            ->eq('uid', $queryBuilder->createNamedParameter((int)$encryptionId));
+
+        $keyRow = $queryBuilder
+            ->select('*')
+            ->from('tx_t3amserver_keys')
+            ->where($where)
+            ->execute()
+            ->fetch();
+
+        if (empty($keyRow) || !is_array($keyRow)) {
             return false;
         }
-        $this->database->exec_DELETEquery('tx_t3amserver_keys', $where);
+
+        $queryBuilder = $this->getKeysQueryBuilder();
+
+        $where = $queryBuilder
+            ->expr()
+            ->eq('uid', $queryBuilder->createNamedParameter((int)$encryptionId));
+
+        $queryBuilder
+            ->delete('tx_t3amserver_keys')
+            ->where($where)
+            ->execute();
 
         $privateKey = base64_decode($keyRow['key_value']);
         $password = base64_decode(urldecode($password));
+
         if (!@openssl_private_decrypt($password, $decryptedPassword, $privateKey)) {
             return false;
         }
 
         $userRow = GeneralUtility::makeInstance(UserRepository::class)->getUser($user);
 
-        $saltingInstance = SaltFactory::getSaltingInstance($userRow['password']);
-        return $saltingInstance->checkPassword($decryptedPassword, $userRow['password']);
+        return GeneralUtility::makeInstance(PasswordHashFactory::class)
+            ->get($userRow['password'], 'BE')
+            ->checkPassword($decryptedPassword, $userRow['password']);
+    }
+
+    /**
+     * @return QueryBuilder
+     */
+    private function getKeysQueryBuilder()
+    {
+        return $this->connectionPool->getQueryBuilderForTable('tx_t3amserver_keys');
     }
 }

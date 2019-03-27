@@ -15,11 +15,13 @@ namespace In2code\T3AM\Server;
  * GNU General Public License for more details.
  */
 
-use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
+use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Class UserRepository
@@ -27,9 +29,9 @@ use TYPO3\CMS\Core\Resource\ResourceFactory;
 class UserRepository
 {
     /**
-     * @var DatabaseConnection
+     * @var ConnectionPool
      */
-    protected $connection = null;
+    protected $connectionPool;
 
     /**
      * @var array
@@ -59,7 +61,7 @@ class UserRepository
      */
     public function __construct()
     {
-        $this->connection = $GLOBALS['TYPO3_DB'];
+        $this->connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
     }
 
     /**
@@ -69,16 +71,40 @@ class UserRepository
      */
     public function getUserState($user)
     {
-        $where = 'username = ' . $this->connection->fullQuoteStr($user, 'be_users');
-        $whereActive = $where . BackendUtility::deleteClause('be_users') . BackendUtility::BEenableFields('be_users');
+        $queryBuilder = $this->getBeUserQueryBuilder();
 
-        if ($this->connection->exec_SELECTcountRows('*', 'be_users', $whereActive)) {
+        $count = $queryBuilder
+            ->count('*')
+            ->from('be_users')
+            ->where($this->getWhereForUserName($queryBuilder, $user))
+            ->execute()
+            ->fetchColumn();
+
+        /** @var DeletedRestriction $restriction */
+        $restriction = GeneralUtility::makeInstance(DeletedRestriction::class);
+
+        $queryBuilder = $this->getBeUserQueryBuilder();
+
+        $queryBuilder
+            ->getRestrictions()
+            ->removeAll()
+            ->add($restriction);
+
+        $countActive = $queryBuilder
+            ->count('*')
+            ->from('be_users')
+            ->where($this->getWhereForUserName($queryBuilder, $user))
+            ->execute()
+            ->fetchColumn();
+
+        if ($countActive) {
             return 'okay';
         }
 
-        if ($this->connection->exec_SELECTcountRows('*', 'be_users', $where)) {
+        if ($count) {
             return 'deleted';
         }
+
         return 'unknown';
     }
 
@@ -89,8 +115,30 @@ class UserRepository
      */
     public function getUser($user)
     {
-        $where = 'username = ' . $this->connection->fullQuoteStr($user, 'be_users');
-        return $this->connection->exec_SELECTgetSingleRow(implode(',', $this->fields), 'be_users', $where);
+        $queryBuilder = $this->getBeUserQueryBuilder();
+
+        return $queryBuilder
+            ->select(...$this->fields)
+            ->from('be_users')
+            ->where($this->getWhereForUserName($queryBuilder, $user))
+            ->execute()
+            ->fetch();
+    }
+
+    /**
+     * @param $queryBuilder QueryBuilder
+     * @param $userName
+     * @return String
+     */
+    protected function getWhereForUserName($queryBuilder, $userName)
+    {
+        $queryBuilder
+            ->getRestrictions()
+            ->removeAll();
+
+        return $queryBuilder
+            ->expr()
+            ->eq('username', $queryBuilder->createNamedParameter($userName));
     }
 
     /**
@@ -100,19 +148,45 @@ class UserRepository
      */
     public function getUserImage($user)
     {
-        $sql = '
-        SELECT sys_file.* FROM sys_file
-        RIGHT JOIN sys_file_reference ON sys_file.uid = sys_file_reference.uid_local
-        RIGHT JOIN be_users ON sys_file_reference.uid_foreign = be_users.uid 
-            WHERE be_users.username = ' . $this->connection->fullQuoteStr($user, 'be_users') . '
-            AND sys_file_reference.deleted = 0
-            AND sys_file_reference.tablenames = "be_users"
-            AND sys_file_reference.fieldname = "avatar"';
+        /** @var QueryBuilder $queryBuilder */
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_file');
 
-        $file = $this->connection->admin_query($sql)->fetch_assoc();
+        $file = $queryBuilder
+            ->select('sys_file.*')
+            ->from('sys_file')
+            ->rightJoin(
+                'sys_file',
+                'sys_file_reference',
+                'sys_file_reference',
+                $queryBuilder
+                    ->expr()
+                    ->eq('sys_file_reference.uid_local', $queryBuilder->quoteIdentifier('sys_file.uid')))
+            ->rightJoin(
+                'sys_file',
+                'be_users',
+                'be_users',
+                $queryBuilder
+                    ->expr()
+                    ->eq('be_users.uid', $queryBuilder->quoteIdentifier('sys_file_reference.uid_foreign')))
+            ->where(
+                $queryBuilder
+                    ->expr()
+                    ->eq('be_users.username', $queryBuilder->createNamedParameter($user)))
+            ->andWhere(
+                $queryBuilder
+                    ->expr()
+                    ->eq('sys_file_reference.tablenames', $queryBuilder->createNamedParameter('be_users')))
+            ->andWhere(
+                $queryBuilder
+                    ->expr()
+                    ->eq('sys_file_reference.fieldname', $queryBuilder->createNamedParameter('avatar')))
+            ->execute()
+            ->fetch();
+
         if (!empty($file['uid'])) {
             try {
                 $resource = ResourceFactory::getInstance()->getFileObject($file['uid'], $file);
+
                 if ($resource instanceof File && $resource->exists()) {
                     return [
                         'identifier' => $resource->getName(),
@@ -122,6 +196,14 @@ class UserRepository
             } catch (FileDoesNotExistException $e) {
             }
         }
+
         return null;
+    }
+
+    /**
+     * @return QueryBuilder
+     */
+    private function getBeUserQueryBuilder() {
+        return $this->connectionPool->getQueryBuilderForTable('be_users');
     }
 }
