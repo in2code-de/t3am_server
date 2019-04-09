@@ -21,6 +21,17 @@ use TYPO3\CMS\Core\Crypto\Random;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use function array_keys;
+use function base64_decode;
+use function base64_encode;
+use function is_array;
+use function is_string;
+use function openssl_pkey_export;
+use function openssl_pkey_get_details;
+use function openssl_pkey_new;
+use function openssl_private_decrypt;
+use function strpos;
+use function urldecode;
 
 /**
  * Class SecurityService
