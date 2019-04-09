@@ -64,7 +64,7 @@ class SecurityService
      *
      * @return bool
      */
-    public function isValid($token)
+    public function isValid(string $token): bool
     {
         if (!is_string($token)) {
             return false;
@@ -87,7 +87,7 @@ class SecurityService
     /**
      * @return array
      */
-    public function createEncryptionKey()
+    public function createEncryptionKey(): array
     {
         $config = [
             'digest_alg' => 'sha512',
@@ -112,7 +112,16 @@ class SecurityService
         ];
     }
 
-    public function authUser($user, $password, $encryptionId)
+    /**
+     * @param string $user
+     * @param string $password
+     * @param int $encryptionId
+     *
+     * @return bool
+     *
+     * @throws InvalidPasswordHashException
+     */
+    public function authUser(string $user, string $password, int $encryptionId): bool
     {
         $queryBuilder = $this->getKeysQueryBuilder();
 

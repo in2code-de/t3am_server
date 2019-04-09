@@ -69,7 +69,7 @@ class UserRepository
      *
      * @return string
      */
-    public function getUserState($user)
+    public function getUserState(string $user): string
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('be_users');
 
@@ -110,7 +110,7 @@ class UserRepository
      *
      * @return array
      */
-    public function getUser($user)
+    public function getUser(string $user): array
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('be_users');
 
@@ -127,7 +127,7 @@ class UserRepository
      *
      * @return null|array
      */
-    public function getUserImage($user)
+    public function getUserImage(string $user)
     {
         /** @var QueryBuilder $queryBuilder */
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_file');

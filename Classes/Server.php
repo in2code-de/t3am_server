@@ -71,7 +71,7 @@ class Server
      *
      * @throws ServerException
      */
-    protected function dispatch($token, $route)
+    protected function dispatch(string $token, string $route): array
     {
         if (!$this->tokenService->isValid($token)) {
             throw new ServerException('Access error', 1519999361);
@@ -101,7 +101,7 @@ class Server
      *
      * @throws ServerException
      */
-    protected function mapParametersToArguments($class, $action)
+    protected function mapParametersToArguments(string $class, string $action): array
     {
         $arguments = [];
 
@@ -129,7 +129,7 @@ class Server
     /**
      * @return bool
      */
-    public function ping()
+    public function ping(): bool
     {
         return true;
     }
