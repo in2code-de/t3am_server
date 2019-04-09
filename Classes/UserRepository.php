@@ -17,7 +17,6 @@ namespace In2code\T3AM\Server;
 
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
-use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
@@ -72,16 +71,11 @@ class UserRepository
     public function getUserState(string $user): string
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('be_users');
-
-        $queryBuilder
-            ->getRestrictions()
-            ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
-
         $countActive = $queryBuilder
             ->count('*')
             ->from('be_users')
             ->where($queryBuilder->expr()->eq('username', $queryBuilder->createNamedParameter($user)))
+            ->setMaxResults(1)
             ->execute()
             ->fetchColumn();
 
@@ -90,15 +84,16 @@ class UserRepository
         }
 
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('be_users');
-
+        $queryBuilder->getRestrictions()->removeAll();
         $count = $queryBuilder
             ->count('*')
             ->from('be_users')
             ->where($queryBuilder->expr()->eq('username', $queryBuilder->createNamedParameter($user)))
+            ->setMaxResults(1)
             ->execute()
             ->fetchColumn();
 
-        if ($count) {
+        if ($count > 0) {
             return 'deleted';
         }
 
