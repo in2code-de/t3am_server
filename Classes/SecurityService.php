@@ -15,10 +15,10 @@ namespace In2code\T3AM\Server;
  * GNU General Public License for more details.
  */
 
+use TYPO3\CMS\Core\Crypto\PasswordHashing\InvalidPasswordHashException;
 use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashFactory;
 use TYPO3\CMS\Core\Crypto\Random;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -73,13 +73,9 @@ class SecurityService
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_t3amserver_client');
 
         return (bool)$queryBuilder
-            ->count('*')
+            ->count('uid')
             ->from('tx_t3amserver_client')
-            ->where(
-                $queryBuilder
-                    ->expr()
-                    ->eq('token', $queryBuilder->createNamedParameter($token))
-            )
+            ->where($queryBuilder->expr()->eq('token', $queryBuilder->createNamedParameter($token)))
             ->execute()
             ->fetchColumn();
     }
@@ -99,10 +95,11 @@ class SecurityService
         openssl_pkey_export($res, $privateKey);
         $pubKey = openssl_pkey_get_details($res);
 
-        $this->getKeysQueryBuilder()
-             ->insert('tx_t3amserver_keys')
-             ->values(['key_value' => base64_encode($privateKey)])
-             ->execute();
+        $this->connectionPool
+            ->getQueryBuilderForTable('tx_t3amserver_keys')
+            ->insert('tx_t3amserver_keys')
+            ->values(['key_value' => base64_encode($privateKey)])
+            ->execute();
 
         return [
             'pubKey' => base64_encode($pubKey['key']),
@@ -123,16 +120,12 @@ class SecurityService
      */
     public function authUser(string $user, string $password, int $encryptionId): bool
     {
-        $queryBuilder = $this->getKeysQueryBuilder();
-
-        $where = $queryBuilder
-            ->expr()
-            ->eq('uid', $queryBuilder->createNamedParameter((int)$encryptionId));
-
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_t3amserver_keys');
         $keyRow = $queryBuilder
             ->select('*')
             ->from('tx_t3amserver_keys')
-            ->where($where)
+            ->where($queryBuilder->expr()->eq('uid', $encryptionId))
+            ->setMaxResults(1)
             ->execute()
             ->fetch();
 
@@ -140,15 +133,10 @@ class SecurityService
             return false;
         }
 
-        $queryBuilder = $this->getKeysQueryBuilder();
-
-        $where = $queryBuilder
-            ->expr()
-            ->eq('uid', $queryBuilder->createNamedParameter((int)$encryptionId));
-
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_t3amserver_keys');
         $queryBuilder
             ->delete('tx_t3amserver_keys')
-            ->where($where)
+            ->where($queryBuilder->expr()->eq('uid', $encryptionId))
             ->execute();
 
         $privateKey = base64_decode($keyRow['key_value']);
@@ -163,13 +151,5 @@ class SecurityService
         return GeneralUtility::makeInstance(PasswordHashFactory::class)
                              ->get($userRow['password'], 'BE')
                              ->checkPassword($decryptedPassword, $userRow['password']);
-    }
-
-    /**
-     * @return QueryBuilder
-     */
-    private function getKeysQueryBuilder()
-    {
-        return $this->connectionPool->getQueryBuilderForTable('tx_t3amserver_keys');
     }
 }
