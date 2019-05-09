@@ -25,6 +25,7 @@ use function header;
 use function is_string;
 use function json_encode;
 use function settype;
+use function version_compare;
 
 /**
  * Class Server
@@ -124,7 +125,12 @@ class Server
                 throw ServerException::forMissingParameter($parameter);
             } else {
                 if (null !== ($type = $reflectionParameter->getType())) {
-                    settype($value, $type);
+                    if (version_compare(PHP_VERSION, '7.1', '>=')) {
+                        $typeName = $type->getName();
+                    } else {
+                        $typeName = $type->__toString();
+                    }
+                    settype($value, $typeName);
                 }
                 $arguments[$position] = $value;
             }
