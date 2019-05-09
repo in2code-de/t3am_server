@@ -72,11 +72,11 @@ class Server
      * @param string $token
      * @param string $route
      *
-     * @return array
+     * @return mixed
      *
      * @throws ServerException
      */
-    protected function dispatch(string $token, string $route): array
+    protected function dispatch(string $token, string $route)
     {
         if (!$this->tokenService->isValid($token)) {
             throw new ServerException('Access error', 1519999361);

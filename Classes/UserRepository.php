@@ -121,9 +121,9 @@ class UserRepository
     /**
      * @param string $user
      *
-     * @return null|array
+     * @return array
      */
-    public function getUserImage(string $user)
+    public function getUserImage(string $user): array
     {
         /** @var QueryBuilder $queryBuilder */
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_file');
@@ -168,6 +168,6 @@ class UserRepository
             }
         }
 
-        return null;
+        return [];
     }
 }
