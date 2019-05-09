@@ -22,6 +22,7 @@ use TYPO3\CMS\Core\Crypto\Random;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
 use function array_keys;
 use function base64_decode;
 use function base64_encode;
@@ -33,6 +34,7 @@ use function openssl_pkey_new;
 use function openssl_private_decrypt;
 use function strpos;
 use function urldecode;
+use function version_compare;
 
 /**
  * Class SecurityService
@@ -159,9 +161,12 @@ class SecurityService
         }
 
         $userRow = GeneralUtility::makeInstance(UserRepository::class)->getUser($user);
-
-        return GeneralUtility::makeInstance(PasswordHashFactory::class)
-                             ->get($userRow['password'], 'BE')
-                             ->checkPassword($decryptedPassword, $userRow['password']);
+        if (version_compare(TYPO3_branch, '9.5', '>=')) {
+            return GeneralUtility::makeInstance(PasswordHashFactory::class)
+                                 ->get($userRow['password'], 'BE')
+                                 ->checkPassword($decryptedPassword, $userRow['password']);
+        }
+        $saltingInstance = SaltFactory::getSaltingInstance($userRow['password']);
+        return $saltingInstance->checkPassword($decryptedPassword, $userRow['password']);
     }
 }
