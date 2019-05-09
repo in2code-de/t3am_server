@@ -80,11 +80,11 @@ class Server
     protected function dispatch(string $token, string $route)
     {
         if (!$this->tokenService->isValid($token)) {
-            throw new ServerException('Access error', 1519999361);
+            throw ServerException::forInvalidToken();
         }
 
         if (!is_string($route) || !isset($this->routes[$route])) {
-            throw new ServerException('Routing error', 1496395045);
+            throw ServerException::forInvalidRoute();
         }
 
         list($class, $action) = $this->routes[$route];
@@ -93,7 +93,7 @@ class Server
             $arguments = $this->mapParametersToArguments($class, $action);
             $result = call_user_func_array([GeneralUtility::makeInstance($class), $action], $arguments);
         } catch (Exception $exception) {
-            throw new ServerException('Exception: ' . $exception->getMessage(), 1496395387, $exception);
+            throw ServerException::forDispatchException($exception);
         }
 
         return $result;
@@ -113,15 +113,15 @@ class Server
 
         try {
             $reflectionMethod = new ReflectionMethod($class, $action);
-        } catch (ReflectionException $e) {
-            throw new ServerException('Can not examine route target', 1520607184, $e);
+        } catch (ReflectionException $exception) {
+            throw ServerException::forInvalidRouteTarget($exception);
         }
         foreach ($reflectionMethod->getParameters() as $position => $reflectionParameter) {
             $parameter = $reflectionParameter->getName();
             $value = GeneralUtility::_GET($parameter);
 
             if (null === $value && !$reflectionParameter->allowsNull()) {
-                throw new ServerException('Missing parameter $' . $parameter, 1496395204);
+                throw ServerException::forMissingParameter($parameter);
             } else {
                 if (null !== ($type = $reflectionParameter->getType())) {
                     settype($value, $type);
