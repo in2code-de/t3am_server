@@ -34,3 +34,19 @@ If a user gets deleted in T3AM Server (not removed from the database!) the user 
 ## Credits
 
 ext_icon.svg: <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
+
+## Changelog 
+
+V2.0.1
+* [BUGFIX] Re-add TYPO3 v8 password check mechanism
+* [BUGFIX] Use the reflection parameter type's getName method in PHP gte 7.1]
+* [BUGFIX] Allow arbitrary return types on dispatcher results
+* [BUGFIX] Correctly detect the be user state
+* [REFACTOR] Add type hints to all methods
+* [REFACTOR] Simplify the usage of the query builder
+* [REFACTOR] Import all functions
+* [REFACTOR] Use strict_types evreywhere
+* [REFACTOR] Move exception codes and messaged to the exception class
+
+v2.0
+* Support for TYPO3 8 & 9.0
