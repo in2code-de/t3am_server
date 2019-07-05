@@ -11,6 +11,9 @@ return [
         'delete' => 'deleted',
         'versioningWS' => false,
         'hideAtCopy' => true,
+        'enablecolumns' => [
+            'disabled' => 'disabled',
+        ],
         'prependAtCopy' => '[copy]',
         'copyAfterDuplFields' => 'instance_notice',
         'searchFields' => 'token,identifier,instance_notice',
@@ -19,15 +22,29 @@ return [
     ],
     'interface' => [
         'always_description' => 0,
-        'showRecordFieldList' => 'token,identifier,instance_notice',
+        'showRecordFieldList' => 'disabled,token,identifier,instance_notice',
     ],
     'types' => [
         '1' => [
-            'showitem' => 'token,identifier,instance_notice',
+            'showitem' => 'disabled,token,identifier,instance_notice',
         ],
     ],
     'palettes' => [],
     'columns' => [
+        'disabled' => [
+            'exclude' => true,
+            'label' => 'LLL:EXT:core/Resources/Private/Language/locallang_general.xlf:LGL.disabled',
+            'config' => [
+                'type' => 'check',
+                'renderType' => 'checkboxToggle',
+                'items' => [
+                    [
+                        0 => '',
+                        1 => '',
+                    ]
+                ],
+            ]
+        ],
         'token' => [
             'label' => 'token (save the form to generate the token)',
             'config' => [
