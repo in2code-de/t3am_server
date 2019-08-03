@@ -17,6 +17,7 @@ namespace In2code\T3AM\Server;
  */
 
 use Exception;
+use Psr\Http\Message\ServerRequestInterface;
 use ReflectionException;
 use ReflectionMethod;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -57,17 +58,19 @@ class Server
         $this->tokenService = GeneralUtility::makeInstance(SecurityService::class);
     }
 
-    public function handle()
+    public function __invoke(ServerRequestInterface $request)
     {
         try {
             $data = $this->dispatch(GeneralUtility::_GET('token'), GeneralUtility::_GET('route'));
-            $response = ['code' => 1496395280, 'error' => false, 'message' => 'ok', 'data' => $data];
+            $payload = ['code' => 1496395280, 'error' => false, 'message' => 'ok', 'data' => $data];
         } catch (ServerException $e) {
-            $response = ['code' => $e->getCode(), 'error' => true, 'message' => $e->getMessage(), 'data' => []];
+            $payload = ['code' => $e->getCode(), 'error' => true, 'message' => $e->getMessage(), 'data' => []];
         }
 
-        header('Content-Type: application/json');
-        echo json_encode($response);
+        $response = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Http\JsonResponse::class);
+        $response->setPayload($payload);
+
+        return $response;
     }
 
     /**
@@ -146,5 +149,3 @@ class Server
         return true;
     }
 }
-
-GeneralUtility::makeInstance(Server::class)->handle();
