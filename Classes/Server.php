@@ -128,7 +128,7 @@ class Server
                 throw ServerException::forMissingParameter($parameter);
             } else {
                 if (null !== ($type = $reflectionParameter->getType())) {
-                    if (version_compare(PHP_VERSION, '7.1', '>=')) {
+                    if (PHP_VERSION_ID >= 70100) {
                         $typeName = $type->getName();
                     } else {
                         $typeName = $type->__toString();

@@ -162,7 +162,10 @@ class SecurityService
         }
 
         $userRow = GeneralUtility::makeInstance(UserRepository::class)->getUser($user);
-        if (version_compare(TYPO3_branch, '9.5', '>=')) {
+        $typo3Branch = class_exists(\TYPO3\CMS\Core\Information\Typo3Version::class)
+            ? (new \TYPO3\CMS\Core\Information\Typo3Version())->getBranch()
+            : TYPO3_branch;
+        if (version_compare($typo3Branch, '9.5', '>=')) {
             return GeneralUtility::makeInstance(PasswordHashFactory::class)
                 ->get($userRow['password'], 'BE')
                 ->checkPassword($decryptedPassword, $userRow['password']);
