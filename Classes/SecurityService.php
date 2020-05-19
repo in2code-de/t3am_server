@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+
 namespace In2code\T3AM\Server;
 
 /*
@@ -156,15 +157,15 @@ class SecurityService
         $privateKey = base64_decode($keyRow['key_value']);
         $password = base64_decode(urldecode($password));
 
-        if (!@openssl_private_decrypt($password, $decryptedPassword, $privateKey)) {
+        if (!@openssl_private_decrypt($password, $decryptedPassword, $privateKey, OPENSSL_PKCS1_OAEP_PADDING)) {
             return false;
         }
 
         $userRow = GeneralUtility::makeInstance(UserRepository::class)->getUser($user);
         if (version_compare(TYPO3_branch, '9.5', '>=')) {
             return GeneralUtility::makeInstance(PasswordHashFactory::class)
-                                 ->get($userRow['password'], 'BE')
-                                 ->checkPassword($decryptedPassword, $userRow['password']);
+                ->get($userRow['password'], 'BE')
+                ->checkPassword($decryptedPassword, $userRow['password']);
         }
         $saltingInstance = SaltFactory::getSaltingInstance($userRow['password']);
         return $saltingInstance->checkPassword($decryptedPassword, $userRow['password']);
