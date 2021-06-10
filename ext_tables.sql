@@ -17,7 +17,7 @@ CREATE TABLE tx_t3amserver_client (
 
   identifier varchar(255) DEFAULT '' NOT NULL,
   instance_notice text,
-  token varchar(255) DEFAULT '' NOT NULL,
+  token varchar(191) DEFAULT '' NOT NULL,
 
   PRIMARY KEY (uid),
   KEY token (token),
