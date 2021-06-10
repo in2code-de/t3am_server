@@ -58,7 +58,7 @@ class Server
         $this->tokenService = GeneralUtility::makeInstance(SecurityService::class);
     }
 
-    public function __invoke(ServerRequestInterface $request)
+    public function processRequest(ServerRequestInterface $request)
     {
         try {
             $data = $this->dispatch(GeneralUtility::_GET('token'), GeneralUtility::_GET('route'));
