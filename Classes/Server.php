@@ -22,9 +22,7 @@ use ReflectionException;
 use ReflectionMethod;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use function call_user_func_array;
-use function header;
 use function is_string;
-use function json_encode;
 use function settype;
 use function version_compare;
 
