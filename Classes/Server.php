@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace In2code\T3AM\Server;
 
 /*
@@ -21,6 +23,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use ReflectionException;
 use ReflectionMethod;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 use function call_user_func_array;
 use function is_string;
 use function settype;

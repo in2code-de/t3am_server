@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace In2code\T3AM\Server;
 
 /*
@@ -23,6 +25,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
+
 use function array_keys;
 use function base64_decode;
 use function base64_encode;
