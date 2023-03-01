@@ -18,11 +18,10 @@ return [
         'copyAfterDuplFields' => 'instance_notice',
         'searchFields' => 'token,identifier,instance_notice',
         'rootLevel' => 1,
-        'iconfile' => 'EXT:t3am_server/ext_icon.svg',
+        'iconfile' => 'EXT:t3am_server/Resources/Public/Icons/Extension.svg',
     ],
     'interface' => [
         'always_description' => 0,
-        'showRecordFieldList' => 'disabled,token,identifier,instance_notice',
     ],
     'types' => [
         '1' => [

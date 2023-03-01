@@ -7,13 +7,17 @@
         {
             "name": "Oliver Eglseder",
             "email": "php@vxvr.de"
+        },
+        {
+          "name": "Daniel Hoffmann",
+          "email": "daniel.hoffmann@in2code.de"
         }
     ],
     "minimum-stability": "stable",
     "require": {
-        "php": "^7.2",
+        "php": ">=7.4 <=8.2",
         "ext-openssl": "*",
-        "typo3/cms-core": "^9.5 || ^10.0"
+        "typo3/cms-core": "^11.5"
     },
     "autoload": {
         "psr-4": {
@@ -25,7 +29,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "3.0.x-dev"
+            "dev-master": "4.0.x-dev"
         },
         "typo3/cms": {
             "extension-key": "t3am_server"

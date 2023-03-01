@@ -18,6 +18,8 @@ namespace In2code\T3AM\Server;
  * GNU General Public License for more details.
  */
 
+use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Driver\Exception;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException;
@@ -40,7 +42,7 @@ class UserRepository
     /**
      * @var array
      */
-    protected $fields = [
+    protected array $fields = [
         'tstamp',
         'username',
         'description',
@@ -54,7 +56,6 @@ class UserRepository
         'email',
         'crdate',
         'realName',
-        'disableIPlock',
         'deleted',
     ];
 
@@ -72,6 +73,8 @@ class UserRepository
      * @param string $user
      *
      * @return string
+     * @throws DBALException
+     * @throws Exception
      */
     public function getUserState(string $user): string
     {
@@ -82,7 +85,7 @@ class UserRepository
             ->where($queryBuilder->expr()->eq('username', $queryBuilder->createNamedParameter($user)))
             ->setMaxResults(1)
             ->execute()
-            ->fetchColumn();
+            ->fetchOne();
 
         if ($countActive) {
             return 'okay';
@@ -96,7 +99,7 @@ class UserRepository
             ->where($queryBuilder->expr()->eq('username', $queryBuilder->createNamedParameter($user)))
             ->setMaxResults(1)
             ->execute()
-            ->fetchColumn();
+            ->fetchOne();
 
         if ($count > 0) {
             return 'deleted';
@@ -109,23 +112,33 @@ class UserRepository
      * @param string $user
      *
      * @return array
+     * @throws DBALException
+     * @throws Exception
      */
     public function getUser(string $user): array
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('be_users');
 
-        return $queryBuilder
+        $userData = $queryBuilder
             ->select(...$this->fields)
             ->from('be_users')
             ->where($queryBuilder->expr()->eq('username', $queryBuilder->createNamedParameter($user)))
             ->execute()
-            ->fetch();
+            ->fetchAssociative();
+
+        if ($userData['lang'] === 'default') {
+            $userData['lang'] = 'en';
+        }
+
+        return $userData;
     }
 
     /**
      * @param string $user
      *
      * @return array
+     * @throws DBALException
+     * @throws Exception
      */
     public function getUserImage(string $user): array
     {
@@ -156,11 +169,11 @@ class UserRepository
             ->where($usernameConstraint)
             ->andWhere($tableNamesConstraint)
             ->execute()
-            ->fetch();
+            ->fetchAssociative();
 
         if (!empty($file['uid'])) {
             try {
-                $resource = ResourceFactory::getInstance()->getFileObject($file['uid'], $file);
+                $resource = GeneralUtility::makeInstance(ResourceFactory::class)->getFileObject($file['uid'], $file);
 
                 if ($resource instanceof File && $resource->exists()) {
                     return [

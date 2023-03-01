@@ -18,13 +18,14 @@ namespace In2code\T3AM\Server;
  * GNU General Public License for more details.
  */
 
+use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Driver\Exception;
 use TYPO3\CMS\Core\Crypto\PasswordHashing\InvalidPasswordHashException;
 use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashFactory;
 use TYPO3\CMS\Core\Crypto\Random;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
 
 use function array_keys;
 use function base64_decode;
@@ -37,7 +38,6 @@ use function openssl_pkey_new;
 use function openssl_private_decrypt;
 use function strpos;
 use function urldecode;
-use function version_compare;
 
 /**
  * Class SecurityService
@@ -80,13 +80,11 @@ class SecurityService
      * @param string $token
      *
      * @return bool
+     * @throws DBALException
+     * @throws Exception
      */
     public function isValid(string $token): bool
     {
-        if (!is_string($token)) {
-            return false;
-        }
-
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_t3amserver_client');
 
         return (bool)$queryBuilder
@@ -94,11 +92,12 @@ class SecurityService
             ->from('tx_t3amserver_client')
             ->where($queryBuilder->expr()->eq('token', $queryBuilder->createNamedParameter($token)))
             ->execute()
-            ->fetchColumn();
+            ->fetchOne();
     }
 
     /**
      * @return array
+     * @throws DBALException
      */
     public function createEncryptionKey(): array
     {
@@ -134,6 +133,8 @@ class SecurityService
      * @return bool
      *
      * @throws InvalidPasswordHashException
+     * @throws DBALException
+     * @throws Exception
      */
     public function authUser(string $user, string $password, int $encryptionId): bool
     {
@@ -144,7 +145,7 @@ class SecurityService
             ->where($queryBuilder->expr()->eq('uid', $encryptionId))
             ->setMaxResults(1)
             ->execute()
-            ->fetch();
+            ->fetchAssociative();
 
         if (empty($keyRow) || !is_array($keyRow)) {
             return false;
@@ -164,12 +165,8 @@ class SecurityService
         }
 
         $userRow = GeneralUtility::makeInstance(UserRepository::class)->getUser($user);
-        if (version_compare(TYPO3_branch, '9.5', '>=')) {
-            return GeneralUtility::makeInstance(PasswordHashFactory::class)
-                                 ->get($userRow['password'], 'BE')
-                                 ->checkPassword($decryptedPassword, $userRow['password']);
-        }
-        $saltingInstance = SaltFactory::getSaltingInstance($userRow['password']);
-        return $saltingInstance->checkPassword($decryptedPassword, $userRow['password']);
+        return GeneralUtility::makeInstance(PasswordHashFactory::class)
+            ->get($userRow['password'], 'BE')
+            ->checkPassword($decryptedPassword, $userRow['password']);
     }
 }

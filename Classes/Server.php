@@ -18,16 +18,16 @@ namespace In2code\T3AM\Server;
  * GNU General Public License for more details.
  */
 
+use Doctrine\DBAL\DBALException;
 use Exception;
 use Psr\Http\Message\ServerRequestInterface;
 use ReflectionException;
 use ReflectionMethod;
+use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 use function call_user_func_array;
-use function is_string;
 use function settype;
-use function version_compare;
 
 /**
  * Class Server
@@ -42,7 +42,7 @@ class Server
     /**
      * @var array
      */
-    protected $routes = [
+    protected array $routes = [
         'check/ping' => [Server::class, 'ping'],
         'user/state' => [UserRepository::class, 'getUserState'],
         'user/auth' => [SecurityService::class, 'authUser'],
@@ -59,6 +59,10 @@ class Server
         $this->tokenService = GeneralUtility::makeInstance(SecurityService::class);
     }
 
+    /**
+     * @throws DBALException
+     * @throws \Doctrine\DBAL\Driver\Exception
+     */
     public function processRequest(ServerRequestInterface $request)
     {
         try {
@@ -68,7 +72,7 @@ class Server
             $payload = ['code' => $e->getCode(), 'error' => true, 'message' => $e->getMessage(), 'data' => []];
         }
 
-        $response = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Http\JsonResponse::class);
+        $response = GeneralUtility::makeInstance(JsonResponse::class);
         $response->setPayload($payload);
 
         return $response;
@@ -81,6 +85,8 @@ class Server
      * @return mixed
      *
      * @throws ServerException
+     * @throws DBALException
+     * @throws \Doctrine\DBAL\Driver\Exception
      */
     protected function dispatch(string $token, string $route)
     {
@@ -88,7 +94,7 @@ class Server
             throw ServerException::forInvalidToken();
         }
 
-        if (!is_string($route) || !isset($this->routes[$route])) {
+        if (!isset($this->routes[$route])) {
             throw ServerException::forInvalidRoute();
         }
 
@@ -129,11 +135,7 @@ class Server
                 throw ServerException::forMissingParameter($parameter);
             } else {
                 if (null !== ($type = $reflectionParameter->getType())) {
-                    if (version_compare(PHP_VERSION, '7.1', '>=')) {
-                        $typeName = $type->getName();
-                    } else {
-                        $typeName = $type->__toString();
-                    }
+                    $typeName = $type->getName();
                     settype($value, $typeName);
                 }
                 $arguments[$position] = $value;
