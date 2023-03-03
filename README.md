@@ -9,6 +9,11 @@ T3AM (client) allows you to log in at any TYPO3 with a single username/password 
 
 [T3AM (client)](https://github.com/in2code-de/t3am) is required if you want to use T3AM Server.
 
+## Compatibilty for newer TYPO3 Version
+
+This extension is the Server part for t3am client for older TYPO3 (server) versions. If you want to TYPO3 11 or newer as T3AM Server, please use
+[T3AM](https://github.com/in2code-de/t3am). The updated version of T3AM combines now Server and Client.
+
 ## Installation & Configuration
 
 Prerequisite: You should have installed T3AM (client) in another TYPO3 instance already!
@@ -35,7 +40,14 @@ If a user gets deleted in T3AM Server (not removed from the database!) the user 
 
 ext_icon.svg: <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
 
-## Changelog 
+## Changelog
+
+V3.0.2
+* Mark this extension as obsolete, as 
+
+
+V3.0.0
+* Support for TYPO3 10 as [T3AM](https://github.com/in2code-de/t3am) combines now Server and client
 
 V2.0.1
 * [BUGFIX] Re-add TYPO3 v8 password check mechanism
